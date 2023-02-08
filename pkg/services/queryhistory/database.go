@@ -15,16 +15,44 @@ import (
 func (s QueryHistoryService) createQuery(ctx context.Context, user *user.SignedInUser, cmd CreateQueryInQueryHistoryCommand) (QueryHistoryDTO, error) {
 	queryHistory := QueryHistory{
 		OrgID:         user.OrgID,
-		UID:           util.GenerateShortUID(),
-		Queries:       cmd.Queries,
 		DatasourceUID: cmd.DatasourceUID,
 		CreatedBy:     user.UserID,
-		CreatedAt:     time.Now().Unix(),
-		Comment:       "",
 	}
+	now := time.Now().Unix()
+
+	// deletes runtime unique properties from the queries (such as `key`)
+	// so that we can compare queries
+	queries := make([]map[string]interface{}, 0)
+	for _, query := range cmd.Queries {
+		delete(query, "key")
+		queries = append(queries, query)
+	}
+	queryHistory.Queries = queries
 
 	err := s.store.WithDbSession(ctx, func(session *db.Session) error {
-		_, err := session.Insert(&queryHistory)
+		exists, err := session.Get(&queryHistory)
+
+		if err != nil {
+			return err
+		}
+
+		if exists && err == nil {
+
+			update := queryHistory
+			update.LastExecutedAt = now
+			update.Queries = queries
+
+			_, err = session.Limit(1).Update(update, queryHistory)
+		} else {
+			queryHistory.UID = util.GenerateShortUID()
+			queryHistory.Queries = cmd.Queries
+			queryHistory.CreatedAt = now
+			queryHistory.LastExecutedAt = now
+			queryHistory.Comment = ""
+
+			_, err = session.Insert(&queryHistory)
+		}
+
 		return err
 	})
 	if err != nil {
@@ -32,13 +60,14 @@ func (s QueryHistoryService) createQuery(ctx context.Context, user *user.SignedI
 	}
 
 	dto := QueryHistoryDTO{
-		UID:           queryHistory.UID,
-		DatasourceUID: queryHistory.DatasourceUID,
-		CreatedBy:     queryHistory.CreatedBy,
-		CreatedAt:     queryHistory.CreatedAt,
-		Comment:       queryHistory.Comment,
-		Queries:       queryHistory.Queries,
-		Starred:       false,
+		UID:            queryHistory.UID,
+		DatasourceUID:  queryHistory.DatasourceUID,
+		CreatedBy:      queryHistory.CreatedBy,
+		CreatedAt:      queryHistory.CreatedAt,
+		LastExecutedAt: queryHistory.LastExecutedAt,
+		Comment:        queryHistory.Comment,
+		Queries:        queryHistory.Queries,
+		Starred:        false,
 	}
 
 	return dto, nil
@@ -72,6 +101,7 @@ func (s QueryHistoryService) searchQueries(ctx context.Context, user *user.Signe
 			query_history.datasource_uid,
 			query_history.created_by,
 			query_history.created_at AS created_at,
+			query_history.last_executed_at,
 			query_history.comment,
 			query_history.queries,
 		`)
@@ -149,7 +179,7 @@ func (s QueryHistoryService) patchQueryComment(ctx context.Context, user *user.S
 		}
 
 		queryHistory.Comment = cmd.Comment
-		_, err = session.ID(queryHistory.ID).Update(queryHistory)
+		_, err = session.ID(queryHistory.ID).Cols("comment").Update(queryHistory)
 		if err != nil {
 			return err
 		}
@@ -167,13 +197,14 @@ func (s QueryHistoryService) patchQueryComment(ctx context.Context, user *user.S
 	}
 
 	dto := QueryHistoryDTO{
-		UID:           queryHistory.UID,
-		DatasourceUID: queryHistory.DatasourceUID,
-		CreatedBy:     queryHistory.CreatedBy,
-		CreatedAt:     queryHistory.CreatedAt,
-		Comment:       queryHistory.Comment,
-		Queries:       queryHistory.Queries,
-		Starred:       isStarred,
+		UID:            queryHistory.UID,
+		DatasourceUID:  queryHistory.DatasourceUID,
+		CreatedBy:      queryHistory.CreatedBy,
+		CreatedAt:      queryHistory.CreatedAt,
+		LastExecutedAt: queryHistory.LastExecutedAt,
+		Comment:        queryHistory.Comment,
+		Queries:        queryHistory.Queries,
+		Starred:        isStarred,
 	}
 
 	return dto, nil
@@ -217,13 +248,14 @@ func (s QueryHistoryService) starQuery(ctx context.Context, user *user.SignedInU
 	}
 
 	dto := QueryHistoryDTO{
-		UID:           queryHistory.UID,
-		DatasourceUID: queryHistory.DatasourceUID,
-		CreatedBy:     queryHistory.CreatedBy,
-		CreatedAt:     queryHistory.CreatedAt,
-		Comment:       queryHistory.Comment,
-		Queries:       queryHistory.Queries,
-		Starred:       isStarred,
+		UID:            queryHistory.UID,
+		DatasourceUID:  queryHistory.DatasourceUID,
+		CreatedBy:      queryHistory.CreatedBy,
+		CreatedAt:      queryHistory.CreatedAt,
+		LastExecutedAt: queryHistory.LastExecutedAt,
+		Comment:        queryHistory.Comment,
+		Queries:        queryHistory.Queries,
+		Starred:        isStarred,
 	}
 
 	return dto, nil
@@ -260,13 +292,14 @@ func (s QueryHistoryService) unstarQuery(ctx context.Context, user *user.SignedI
 	}
 
 	dto := QueryHistoryDTO{
-		UID:           queryHistory.UID,
-		DatasourceUID: queryHistory.DatasourceUID,
-		CreatedBy:     queryHistory.CreatedBy,
-		CreatedAt:     queryHistory.CreatedAt,
-		Comment:       queryHistory.Comment,
-		Queries:       queryHistory.Queries,
-		Starred:       isStarred,
+		UID:            queryHistory.UID,
+		DatasourceUID:  queryHistory.DatasourceUID,
+		CreatedBy:      queryHistory.CreatedBy,
+		CreatedAt:      queryHistory.CreatedAt,
+		LastExecutedAt: queryHistory.LastExecutedAt,
+		Comment:        queryHistory.Comment,
+		Queries:        queryHistory.Queries,
+		Starred:        isStarred,
 	}
 
 	return dto, nil

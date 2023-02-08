@@ -13,6 +13,7 @@ import { fromDTO, toDTO } from './remoteStorageConverter';
 export type RichHistoryRemoteStorageDTO = {
   uid: string;
   createdAt: number;
+  lastExecutedAt: number;
   datasourceUid: string;
   starred: boolean;
   comment: string;

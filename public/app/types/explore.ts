@@ -238,6 +238,7 @@ export interface QueryTransaction {
 export type RichHistoryQuery<T extends DataQuery = DataQuery> = {
   id: string;
   createdAt: number;
+  lastExecutedAt: number;
   datasourceUid: string;
   datasourceName: string;
   starred: boolean;

@@ -229,7 +229,7 @@ export function createQueryHeading(query: RichHistoryQuery, sortOrder: SortOrder
   if (sortOrder === SortOrder.DatasourceAZ || sortOrder === SortOrder.DatasourceZA) {
     heading = query.datasourceName;
   } else {
-    heading = createDateStringFromTs(query.createdAt);
+    heading = createDateStringFromTs(query.lastExecutedAt);
   }
   return heading;
 }

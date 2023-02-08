@@ -41,7 +41,7 @@ export default interface RichHistoryStorage {
    * Creates new RichHistoryQuery, returns object with unique id and created date
    */
   addToRichHistory(
-    newRichHistoryQuery: Omit<RichHistoryQuery, 'id' | 'createdAt'>
+    newRichHistoryQuery: Omit<RichHistoryQuery, 'id' | 'createdAt' | 'lastExecutedAt'>
   ): Promise<{ warning?: RichHistoryStorageWarningDetails; richHistoryQuery: RichHistoryQuery }>;
 
   deleteAll(): Promise<void>;

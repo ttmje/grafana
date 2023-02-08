@@ -406,7 +406,7 @@ async function handleHistory(
   const nextHistory = updateHistory(history, datasourceId, queries);
   dispatch(historyUpdatedAction({ exploreId, history: nextHistory }));
 
-  dispatch(addHistoryItem(datasource.uid, datasource.name, queries));
+  await dispatch(addHistoryItem(datasource.uid, datasource.name, queries));
 
   // Because filtering happens in the backend we cannot add a new entry without checking if it matches currently
   // used filters. Instead, we refresh the query history list.
