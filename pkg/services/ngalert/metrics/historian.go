@@ -6,7 +6,6 @@ import (
 )
 
 type Historian struct {
-	Registerer            prometheus.Registerer
 	TransitionsTotal      *prometheus.CounterVec
 	WriteFailuresTotal    prometheus.Counter
 	ActiveWriteGoroutines prometheus.Gauge
@@ -15,7 +14,6 @@ type Historian struct {
 
 func NewHistorianMetrics(r prometheus.Registerer) *Historian {
 	return &Historian{
-		Registerer: r,
 		TransitionsTotal: promauto.With(r).NewCounterVec(prometheus.CounterOpts{
 			Namespace: Namespace,
 			Subsystem: Subsystem,
