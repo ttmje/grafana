@@ -266,4 +266,8 @@ const (
 	// FlagLokiQuerySplitting
 	// Split large interval queries into subqueries with smaller time intervals
 	FlagLokiQuerySplitting = "lokiQuerySplitting"
+	
+	// FlagPrometheusMetricEncyclopedia
+	// Replace the Prometheus builder editor metric select with a paginated and filterable component
+	FlagPrometheusMetricEncyclopedia = "prometheusMetricEncyclopedia"
 )

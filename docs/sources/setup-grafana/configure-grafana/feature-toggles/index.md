@@ -91,6 +91,7 @@ Alpha features might be changed or removed without prior notice.
 | `editPanelCSVDragAndDrop`          | Enables drag and drop for CSV and Excel files                                                                                                                                |
 | `logsContextDatasourceUi`          | Allow datasource to provide custom UI for context view                                                                                                                       |
 | `lokiQuerySplitting`               | Split large interval queries into subqueries with smaller time intervals                                                                                                     |
+| `prometheusMetricEncyclopedia`     | Replace the Prometheus builder editor metric select with a paginated and filterable component                                                                                |
 
 ## Development feature toggles
 
