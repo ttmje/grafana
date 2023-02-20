@@ -122,15 +122,23 @@ func newInstanceSettings(httpClientProvider httpclient.Provider) datasource.Inst
 			maxConcurrentShardRequests = 256
 		}
 
-		includeFrozen, ok := jsonData["includeFrozen"].(bool)
+		includeFrozenFromJson, ok := jsonData["includeFrozen"].(bool)
 		if !ok {
-			includeFrozen = false
+			includeFrozenFromJson = false
 		}
 
+		// this field is not editable anymore,
+		// we have it because the following combination of json-fields:
+		// - xpack=false
+		// - includefrozen=true
+		// should resolve to `false`,
+		// to be 100% backward-compatible.
 		xpack, ok := jsonData["xpack"].(bool)
 		if !ok {
 			xpack = false
 		}
+
+		includeFrozen := includeFrozenFromJson && xpack
 
 		model := es.DatasourceInfo{
 			ID:                         settings.ID,
@@ -143,7 +151,6 @@ func newInstanceSettings(httpClientProvider httpclient.Provider) datasource.Inst
 			Interval:                   interval,
 			TimeInterval:               timeInterval,
 			IncludeFrozen:              includeFrozen,
-			XPack:                      xpack,
 		}
 		return model, nil
 	}

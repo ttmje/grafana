@@ -30,7 +30,6 @@ type DatasourceInfo struct {
 	TimeInterval               string
 	MaxConcurrentShardRequests int64
 	IncludeFrozen              bool
-	XPack                      bool
 }
 
 const loggerName = "tsdb.elasticsearch.client"
@@ -231,7 +230,7 @@ func (c *baseClientImpl) getMultiSearchQueryParameters() string {
 	}
 	qs = append(qs, fmt.Sprintf("max_concurrent_shard_requests=%d", maxConcurrentShardRequests))
 
-	if c.ds.IncludeFrozen && c.ds.XPack {
+	if c.ds.IncludeFrozen {
 		qs = append(qs, "ignore_throttled=false")
 	}
 

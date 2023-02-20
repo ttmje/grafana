@@ -122,23 +122,13 @@ export const ElasticDetails = ({ value, onChange }: Props) => {
           />
         </InlineField>
 
-        <InlineField label="X-Pack enabled" labelWidth={26}>
+        <InlineField label="Include Frozen Indices" labelWidth={26}>
           <InlineSwitch
-            id="es_config_xpackEnabled"
-            value={value.jsonData.xpack || false}
-            onChange={jsonDataSwitchChangeHandler('xpack', value, onChange)}
+            id="es_config_frozenIndices"
+            value={(value.jsonData.includeFrozen ?? false) && (value.jsonData.xpack ?? false)}
+            onChange={(event) => includeFrozenIndicesOnChange(event.currentTarget.checked, value, onChange)}
           />
         </InlineField>
-
-        {value.jsonData.xpack && (
-          <InlineField label="Include Frozen Indices" labelWidth={26}>
-            <InlineSwitch
-              id="es_config_frozenIndices"
-              value={value.jsonData.includeFrozen ?? false}
-              onChange={jsonDataSwitchChangeHandler('includeFrozen', value, onChange)}
-            />
-          </InlineField>
-        )}
       </FieldSet>
     </>
   );
@@ -166,6 +156,21 @@ const jsonDataChangeHandler =
       },
     });
   };
+
+const includeFrozenIndicesOnChange = (newValue: boolean, formValue: Props['value'], onChange: Props['onChange']) => {
+  const newJsonData = { ...formValue.jsonData };
+  if (newValue) {
+    newJsonData.xpack = true;
+    newJsonData.includeFrozen = true;
+  } else {
+    delete newJsonData.xpack;
+    delete newJsonData.includeFrozen;
+  }
+  onChange({
+    ...formValue,
+    jsonData: newJsonData,
+  });
+};
 
 const jsonDataSwitchChangeHandler =
   (key: keyof ElasticsearchOptions, value: Props['value'], onChange: Props['onChange']) =>
