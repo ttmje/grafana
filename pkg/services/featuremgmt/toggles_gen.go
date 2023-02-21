@@ -270,4 +270,8 @@ const (
 	// FlagPrometheusMetricEncyclopedia
 	// Replace the Prometheus builder editor metric select with a paginated and filterable component
 	FlagPrometheusMetricEncyclopedia = "prometheusMetricEncyclopedia"
+
+	// FlagIndividualCookiePreferences
+	// Support overriding cookie preferences per user
+	FlagIndividualCookiePreferences = "individualCookiePreferences"
 )
