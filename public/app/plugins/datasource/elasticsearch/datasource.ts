@@ -92,6 +92,7 @@ export class ElasticDatasource
   includeFrozen: boolean;
   isProxyAccess: boolean;
   timeSrv: TimeSrv;
+  maybeDatabaseVersion: string | null;
 
   constructor(
     instanceSettings: DataSourceInstanceSettings<ElasticsearchOptions>,
@@ -119,6 +120,7 @@ export class ElasticDatasource
     this.logLevelField = settingsData.logLevelField || '';
     this.dataLinks = settingsData.dataLinks || [];
     this.includeFrozen = settingsData.includeFrozen ?? false;
+    this.maybeDatabaseVersion = null;
     this.annotations = {
       QueryEditor: ElasticsearchAnnotationsQueryEditor,
     };
@@ -143,13 +145,6 @@ export class ElasticDatasource
     if (!this.isProxyAccess) {
       const error = new Error(
         'Browser access mode in the Elasticsearch datasource is no longer available. Switch to server access mode.'
-      );
-      return throwError(() => error);
-    }
-
-    if (!isSupportedVersion(this.esVersion)) {
-      const error = new Error(
-        'Support for Elasticsearch versions after their end-of-life (currently versions < 7.10) was removed.'
       );
       return throwError(() => error);
     }
@@ -427,7 +422,13 @@ export class ElasticDatasource
     return finalQueries;
   }
 
-  testDatasource() {
+  async testDatasource() {
+    // we explicitly call the uncached version, to have "fresh" results
+    const dbVersion = await this.getDatabaseVersionUncached();
+    if (!isSupportedVersion(dbVersion)) {
+      return { status: 'error', message: 'unsupported Elasticsearch version' };
+    }
+
     // validate that the index exist and has date field
     return lastValueFrom(
       this.getFields(['date']).pipe(
@@ -1038,6 +1039,35 @@ export class ElasticDatasource
 
     const finalQuery = [query, ...esFilters].filter((f) => f).join(' AND ');
     return finalQuery;
+  }
+
+  // NOTE: this may return invalid semver strings
+  private getDatabaseVersionUncached(): Promise<string> {
+    // we want this function to never fail
+    return lastValueFrom(this.request('GET', '/')).then(
+      (data) => {
+        const versionNumber = data?.version?.number;
+        if (typeof versionNumber !== 'string') {
+          return '';
+        }
+        return versionNumber;
+      },
+      (error) => {
+        console.error(error);
+        return '';
+      }
+    );
+  }
+
+  async getDatabaseVersion(): Promise<string> {
+    const maybe = this.maybeDatabaseVersion;
+    if (maybe != null) {
+      return maybe;
+    }
+
+    const freshDatabaseVersion = await this.getDatabaseVersionUncached();
+    this.maybeDatabaseVersion = freshDatabaseVersion;
+    return freshDatabaseVersion;
   }
 }
 

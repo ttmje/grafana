@@ -123,11 +123,8 @@ interface MetricConfiguration<T extends MetricAggregationType> {
   supportsInlineScript: boolean;
   supportsMissing: boolean;
   isPipelineAgg: boolean;
-  /**
-   * A valid semver range for which the metric is known to be available.
-   * If omitted defaults to '*'.
-   */
-  versionRange?: string;
+  // marks the metric as only available in 7.x, and not in later versions.
+  es7Only?: boolean;
   supportsMultipleBucketPaths: boolean;
   isSingleMetric?: boolean;
   hasSettings: boolean;
