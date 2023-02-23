@@ -1,4 +1,4 @@
-import { valid, gte, major } from 'semver';
+import { valid } from 'semver';
 
 import { isMetricAggregationWithField } from './components/QueryEditor/MetricAggregationsEditor/aggregations';
 import { metricAggregationConfig } from './components/QueryEditor/MetricAggregationsEditor/utils';
@@ -115,25 +115,4 @@ export const coerceESVersion = (version: string | number | undefined): string =>
     default:
       return '8.0.0';
   }
-};
-
-// semver.valid returns `null` if the string is invalid
-const isValidSemver = (maybeVersion: string): boolean => {
-  return valid(maybeVersion) !== null;
-};
-
-export const isSupportedVersion = (maybeVersion: string): boolean => {
-  if (!isValidSemver(maybeVersion)) {
-    return true;
-  }
-
-  return gte(maybeVersion, '7.10.0');
-};
-
-export const isEs7 = (maybeVersion: string): boolean => {
-  if (!isValidSemver(maybeVersion)) {
-    return false;
-  }
-
-  return major(maybeVersion) === 7;
 };

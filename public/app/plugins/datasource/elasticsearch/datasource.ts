@@ -1,6 +1,7 @@
 import { cloneDeep, find, first as _first, isNumber, isObject, isString, map as _map } from 'lodash';
 import { generate, lastValueFrom, Observable, of, throwError } from 'rxjs';
 import { catchError, first, map, mergeMap, skipWhile, throwIfEmpty, tap } from 'rxjs/operators';
+import { gte, major, valid } from 'semver';
 
 import {
   DataFrame,
@@ -66,6 +67,11 @@ const ELASTIC_META_FIELDS = [
   '_meta',
 ];
 
+type DatabaseInfo = {
+  isEs7: boolean;
+  isSupported: boolean;
+};
+
 export class ElasticDatasource
   extends DataSourceWithBackend<ElasticsearchQuery, ElasticsearchOptions>
   implements
@@ -92,7 +98,7 @@ export class ElasticDatasource
   includeFrozen: boolean;
   isProxyAccess: boolean;
   timeSrv: TimeSrv;
-  maybeDatabaseVersion: string | null;
+  maybeDatabaseInfo: DatabaseInfo | null;
 
   constructor(
     instanceSettings: DataSourceInstanceSettings<ElasticsearchOptions>,
@@ -120,7 +126,7 @@ export class ElasticDatasource
     this.logLevelField = settingsData.logLevelField || '';
     this.dataLinks = settingsData.dataLinks || [];
     this.includeFrozen = settingsData.includeFrozen ?? false;
-    this.maybeDatabaseVersion = null;
+    this.maybeDatabaseInfo = null;
     this.annotations = {
       QueryEditor: ElasticsearchAnnotationsQueryEditor,
     };
@@ -424,8 +430,8 @@ export class ElasticDatasource
 
   async testDatasource() {
     // we explicitly call the uncached version, to have "fresh" results
-    const dbVersion = await this.getDatabaseVersionUncached();
-    if (!isSupportedVersion(dbVersion)) {
+    const dbInfo = await this.getDatabaseInfoUncached();
+    if (!dbInfo.isSupported) {
       return { status: 'error', message: 'unsupported Elasticsearch version' };
     }
 
@@ -1042,32 +1048,40 @@ export class ElasticDatasource
   }
 
   // NOTE: this may return invalid semver strings
-  private getDatabaseVersionUncached(): Promise<string> {
+  private getDatabaseInfoUncached(): Promise<DatabaseInfo> {
     // we want this function to never fail
     return lastValueFrom(this.request('GET', '/')).then(
       (data) => {
         const versionNumber = data?.version?.number;
         if (typeof versionNumber !== 'string') {
-          return '';
+          return { isEs7: false, isSupported: true };
         }
-        return versionNumber;
+
+        if (valid(versionNumber) === null) {
+          return { isEs7: false, isSupported: true };
+        }
+
+        return {
+          isEs7: major(versionNumber) === 7,
+          isSupported: gte(versionNumber, '7.10.0'),
+        };
       },
       (error) => {
         console.error(error);
-        return '';
+        return { isEs7: false, isSupported: true };
       }
     );
   }
 
-  async getDatabaseVersion(): Promise<string> {
-    const maybe = this.maybeDatabaseVersion;
+  async getDatabaseInfo(): Promise<DatabaseInfo> {
+    const maybe = this.maybeDatabaseInfo;
     if (maybe != null) {
       return maybe;
     }
 
-    const freshDatabaseVersion = await this.getDatabaseVersionUncached();
-    this.maybeDatabaseVersion = freshDatabaseVersion;
-    return freshDatabaseVersion;
+    const freshDatabaseInfo = await this.getDatabaseInfoUncached();
+    this.maybeDatabaseInfo = freshDatabaseInfo;
+    return freshDatabaseInfo;
   }
 }
 

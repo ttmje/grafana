@@ -7,7 +7,6 @@ import { InlineSegmentGroup, SegmentAsync, useTheme2 } from '@grafana/ui';
 import { useFields } from '../../../hooks/useFields';
 import { useDispatch } from '../../../hooks/useStatelessReducer';
 import { MetricAggregation, MetricAggregationType } from '../../../types';
-import { isEs7 } from '../../../utils';
 import { MetricPicker } from '../../MetricPicker';
 import { useDatasource, useQuery } from '../ElasticsearchQueryContext';
 import { segmentStyles } from '../styles';
@@ -67,8 +66,8 @@ export const MetricEditor = ({ value }: Props) => {
   const getFields = useFields(value.type);
 
   const getTypeOptionsAsync = async (previousMetrics: MetricAggregation[], xpack = false) => {
-    const dbVersion = await datasource.getDatabaseVersion();
-    return getTypeOptions(previousMetrics, isEs7(dbVersion));
+    const dbInfo = await datasource.getDatabaseInfo();
+    return getTypeOptions(previousMetrics, dbInfo.isEs7);
   };
 
   const loadOptions = useCallback(async () => {
